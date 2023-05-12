@@ -4,6 +4,8 @@ GIT_COMMIT=$(shell git rev-list -1 HEAD )
 BUILD_TIME=$(shell date -u +%Y%m%d_%H%M%SZ)
 GIT_CLEAN=$(shell git status | grep -E "working (tree|directory) clean" | wc -l | sed 's/^[ ]*//')
 
+SHA256=$(shell which sha256sum >/dev/null 2>&1 || echo 'shasum -a 256')
+
 # Last git tag
 LAST_GIT_TAG=$(shell git describe --abbrev=0 --tags 2> /dev/null)
 
@@ -19,8 +21,8 @@ BUILD_FILES=glauth.go
 TRIM_FLAGS=-gcflags "all=-trimpath=${PWD}" -asmflags "all=-trimpath=${PWD}"
 
 # Targets
-MAIN_TARGETS=linux/amd64,linux/386,linux/arm64,linux/arm-7,darwin/amd64,darwin/arm64,windows/amd64,windows/386
-PLUGIN_TARGETS=linux/amd64,linux/386,linux/arm64,linux/arm-7,darwin/amd64,darwin/arm64
+MAIN_TARGETS=linux/amd64,linux/386,linux/arm64,linux/arm-7,darwin/amd64,darwin/arm64,windows/amd64,windows/386,freebsd/amd64,netbsd/amd64
+PLUGIN_TARGETS=linux/amd64,linux/386,linux/arm64,linux/arm-7,darwin/amd64,darwin/arm64.freebsd/amd64,netbsd/amd64
 
 # Plugins
 include pkg/plugins/*/Makefile
@@ -42,7 +44,7 @@ all: setup binaries verify
 fast: setup linuxamd64
 
 # list of binary formats to build
-binaries: linux386 linuxamd64 linuxarm linuxarm64 darwinamd64 darwinarm64 win386 winamd64
+binaries: linux386 linuxamd64 linuxarm linuxarm64 darwinamd64 darwinarm64 win386 winamd64 freebsdamd64 netbsdamd64
 
 # Setup commands to always run
 setup: getdeps format
@@ -69,31 +71,37 @@ devrun:
 	go run ${BUILD_FILES} -c sample-simple.cfg
 
 linux386:
-	mkdir -p bin/$@ && GOOS=linux GOARCH=386 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && sha256sum glauth > glauth.sha256
+	mkdir -p bin/$@ && GOOS=linux GOARCH=386 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && ${SHA256} glauth > glauth.sha256
 
 linuxamd64:
-	mkdir -p bin/$@ && GOOS=linux GOARCH=amd64 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && sha256sum glauth > glauth.sha256
+	mkdir -p bin/$@ && GOOS=linux GOARCH=amd64 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && ${SHA256} glauth > glauth.sha256
 
 linuxarm:
-	mkdir -p bin/$@ && GOOS=linux GOARCH=arm go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && sha256sum glauth > glauth.sha256
+	mkdir -p bin/$@ && GOOS=linux GOARCH=arm go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && ${SHA256} glauth > glauth.sha256
 
 linuxarm64:
-	mkdir -p bin/$@ && GOOS=linux GOARCH=arm64 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && sha256sum glauth > glauth.sha256
+	mkdir -p bin/$@ && GOOS=linux GOARCH=arm64 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && ${SHA256} glauth > glauth.sha256
 
 darwinamd64:
-	mkdir -p bin/$@ && GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && sha256sum glauth > glauth.sha256
+	mkdir -p bin/$@ && GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && ${SHA256} glauth > glauth.sha256
 
 darwinarm64:
-	mkdir -p bin/$@ && GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && sha256sum glauth > glauth.sha256
+	mkdir -p bin/$@ && GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && ${SHA256} glauth > glauth.sha256
+
+freebsdamd64:
+	mkdir -p bin/$@ && GOOS=freebsd GOARCH=amd64 CGO_ENABLED=1 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && ${SHA256} glauth > glauth.sha256
+
+netbsdamd64:
+	mkdir -p bin/$@ && GOOS=netbsd GOARCH=amd64 CGO_ENABLED=1 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && ${SHA256} glauth > glauth.sha256
 
 win386:
-	mkdir -p bin/$@ && GOOS=windows GOARCH=386 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && sha256sum glauth > glauth.sha256
+	mkdir -p bin/$@ && GOOS=windows GOARCH=386 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && ${SHA256} glauth > glauth.sha256
 
 winamd64:
-	mkdir -p bin/$@ && GOOS=windows GOARCH=amd64 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && sha256sum glauth > glauth.sha256
+	mkdir -p bin/$@ && GOOS=windows GOARCH=amd64 go build ${TRIM_FLAGS} -ldflags "${BUILD_VARS}" -o bin/$@/glauth ${BUILD_FILES} && cd bin/$@ && ${SHA256} glauth > glauth.sha256
 
 verify:
-	@for binary in linux386 linuxamd64 linuxarm linuxarm64 darwinamd64 darwinarm64 win386 winamd64; do cd bin/$$binary && sha256sum glauth.sha256 -c && cd ../..; done
+	@for binary in linux386 linuxamd64 linuxarm linuxarm64 darwinamd64 darwinarm64 freebsdamd64 netbsdamd64 win386 winamd64; do cd bin/$$binary && ${SHA256} glauth.sha256 -c && cd ../..; done
 
 pull-plugin:
 	@git submodule add $U $M && \
@@ -193,4 +201,4 @@ testdocker:
 	docker rm glauth-test && \
 	echo "==> Testing complete."
 
-.PHONY: all run test fast binaries setup getdeps runtest updatetest format devrun linux386 linuxamd64 linuxarm linuxarm64 darwinamd64 darwinarm64 win386 winamd64 verify pull-plugin pull-base-plugins forget-plugin forget-plugins releasemain releaseplugin release releaseplugins releasedockermain releaserdockerplugins releasedocker testdocker
+.PHONY: all run test fast binaries setup getdeps runtest updatetest format devrun linux386 linuxamd64 linuxarm linuxarm64 darwinamd64 darwinarm64 freebsdamd64 netbsdamd64 win386 winamd64 verify pull-plugin pull-base-plugins forget-plugin forget-plugins releasemain releaseplugin release releaseplugins releasedockermain releaserdockerplugins releasedocker testdocker
